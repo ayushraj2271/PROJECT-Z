@@ -1,0 +1,45 @@
+name: PROJECT Z Android Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Godot
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.5.0
+
+      - name: Install Android export templates
+        run: |
+          mkdir -p ~/.local/share/godot/export_templates/4.5
+          wget -q https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_export_templates.tpz \
+            -O /tmp/templates.tpz
+          unzip -q /tmp/templates.tpz -d /tmp/godot_templates
+          cp -r /tmp/godot_templates/templates/* ~/.local/share/godot/export_templates/4.5/
+
+      - name: Create build folder
+        run: mkdir -p build
+
+      - name: Check project
+        run: |
+          godot --headless --path . --editor --quit
+
+      - name: Build Android APK
+        run: |
+          godot --headless --path . --export-debug "Android" build/PROJECT_Z.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: PROJECT-Z-Android
+          path: build/PROJECT_Z.apk
