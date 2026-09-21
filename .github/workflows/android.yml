@@ -32,6 +32,10 @@ jobs:
           use-dotnet: false
           include-templates: true
 
+      - name: Enable Android texture compression
+        run: |
+          sed -i '/textures\/default_filters\/use_nearest_mipmap_filter=false/a textures/vram_compression/import_etc2_astc=true' project.godot
+
       - name: Import Godot project
         run: |
           godot --headless --path . --editor --quit
@@ -55,12 +59,15 @@ jobs:
       - name: Configure Godot Android settings
         run: |
           mkdir -p ~/.config/godot
+
           cat > ~/.config/godot/editor_settings-4.5.tres <<EOF
           [gd_resource type="EditorSettings" format=3]
 
           [resource]
           export/android/java_sdk_path = "$JAVA_HOME"
           export/android/android_sdk_path = "$ANDROID_HOME"
+          export/android/adb = "$ANDROID_HOME/platform-tools/adb"
+          export/android/jarsigner = "$JAVA_HOME/bin/jarsigner"
           export/android/debug_keystore = "$RUNNER_TEMP/debug.keystore"
           export/android/debug_keystore_user = "androiddebugkey"
           export/android/debug_keystore_pass = "android"
@@ -72,10 +79,22 @@ jobs:
         run: |
           echo "JAVA_HOME=$JAVA_HOME"
           echo "ANDROID_HOME=$ANDROID_HOME"
+
           test -d "$ANDROID_HOME/platform-tools"
+          test -f "$ANDROID_HOME/platform-tools/adb"
+
           test -d "$ANDROID_HOME/platforms/android-35"
           test -d "$ANDROID_HOME/build-tools/35.0.0"
+
+          test -f "$JAVA_HOME/bin/jarsigner"
           test -f "$RUNNER_TEMP/debug.keystore"
+
+          echo "Android environment OK"
+
+      - name: Verify Godot project
+        run: |
+          grep "import_etc2_astc=true" project.godot
+          echo "Godot project configuration OK"
 
       - name: Build Android APK
         env:
@@ -84,6 +103,7 @@ jobs:
           GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD: android
         run: |
           godot --headless \
+            --verbose \
             --path . \
             --export-debug "Android" \
             build/PROJECT_Z.apk
