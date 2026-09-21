@@ -52,6 +52,31 @@ jobs:
             -validity 9999 \
             -storetype JKS
 
+      - name: Configure Godot Android settings
+        run: |
+          mkdir -p ~/.config/godot
+          cat > ~/.config/godot/editor_settings-4.5.tres <<EOF
+          [gd_resource type="EditorSettings" format=3]
+
+          [resource]
+          export/android/java_sdk_path = "$JAVA_HOME"
+          export/android/android_sdk_path = "$ANDROID_HOME"
+          export/android/debug_keystore = "$RUNNER_TEMP/debug.keystore"
+          export/android/debug_keystore_user = "androiddebugkey"
+          export/android/debug_keystore_pass = "android"
+          export/android/force_system_user = false
+          export/android/shutdown_adb_on_exit = true
+          EOF
+
+      - name: Verify Android environment
+        run: |
+          echo "JAVA_HOME=$JAVA_HOME"
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          test -d "$ANDROID_HOME/platform-tools"
+          test -d "$ANDROID_HOME/platforms/android-35"
+          test -d "$ANDROID_HOME/build-tools/35.0.0"
+          test -f "$RUNNER_TEMP/debug.keystore"
+
       - name: Build Android APK
         env:
           GODOT_ANDROID_KEYSTORE_DEBUG_PATH: ${{ runner.temp }}/debug.keystore
