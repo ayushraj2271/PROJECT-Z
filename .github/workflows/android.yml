@@ -39,13 +39,29 @@ jobs:
       - name: Create build folder
         run: |
           mkdir -p build
-
-      - name: Build Android APK
+          
+      - name: Create Android debug keystore
+        run: |
+          keytool -keyalg RSA \
+            -genkeypair \
+            -alias androiddebugkey \
+            -keypass android \
+            -keystore "$RUNNER_TEMP/debug.keystore" \
+            -storepass android \
+            -dname "CN=Android Debug,O=Android,C=US" \
+            -validity 9999 \
+            -storetype JKS
+            
+           - name: Build Android APK
+        env:
+          GODOT_ANDROID_KEYSTORE_DEBUG_PATH: ${{ runner.temp }}/debug.keystore
+          GODOT_ANDROID_KEYSTORE_DEBUG_USER: androiddebugkey
+          GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD: android
         run: |
           godot --headless \
             --path . \
             --export-debug "Android" \
-            build/PROJECT_Z.apk
+            build/PROJECT_Z.apk 
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
