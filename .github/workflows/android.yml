@@ -14,32 +14,42 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Godot
+      - name: Set up JDK 17
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
+
+      - name: Set up Godot
         uses: chickensoft-games/setup-godot@v2
         with:
           version: 4.5.0
+          use-dotnet: false
+          include-templates: true
 
-      - name: Install Android export templates
-        run: |
-          mkdir -p ~/.local/share/godot/export_templates/4.5
-          wget -q https://github.com/godotengine/godot/releases/download/4.5-stable/Godot_v4.5-stable_export_templates.tpz \
-            -O /tmp/templates.tpz
-          unzip -q /tmp/templates.tpz -d /tmp/godot_templates
-          cp -r /tmp/godot_templates/templates/* ~/.local/share/godot/export_templates/4.5/
-
-      - name: Create build folder
-        run: mkdir -p build
-
-      - name: Check project
+      - name: Import Godot project
         run: |
           godot --headless --path . --editor --quit
 
+      - name: Create build folder
+        run: |
+          mkdir -p build
+
       - name: Build Android APK
         run: |
-          godot --headless --path . --export-debug "Android" build/PROJECT_Z.apk
+          godot --headless \
+            --path . \
+            --export-debug "Android" \
+            build/PROJECT_Z.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: PROJECT-Z-Android
           path: build/PROJECT_Z.apk
+          if-no-files-found: error
